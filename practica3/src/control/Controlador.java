@@ -1,9 +1,9 @@
 package control;
 
+import java.util.ArrayList;
 import javax.swing.JFrame;
 import modelo.*;
 import vista.PanelPrincipal;
-import javax.swing.*;
 
 /**
  * Controlador principal que implementa el patrón MVC y gestiona la comunicación
@@ -13,131 +13,180 @@ import javax.swing.*;
  * @author Marc Nadal Sastre Gondar
  */
 public class Controlador implements Notificar {
-    private Datos datos;
-    private PanelPrincipal panelPrincipal;
-    private int contadorTrominos;
 
-    public Controlador() {
-        datos = new Datos();
-        panelPrincipal = new PanelPrincipal(this);
-        JFrame frame = new JFrame("Trominos con Backtracking");
+    // Panel principal de la interfaz gráfica
+    private PanelPrincipal panelPrincipal;
+    // Lista de procesos que implementan la interfaz Notificar
+    private ArrayList<Notificar> procesos;
+    // Objeto que almacena los datos para los cálculos
+    private Datos dat;
+
+    /**
+     * Punto de entrada principal de la aplicación
+     */
+    public static void main(String[] args) {
+        (new Controlador()).inicio();
+    }
+
+    /**
+     * Inicializa la aplicación, creando la interfaz gráfica y preparando los
+     * datos iniciales
+     */
+    private void inicio() {
+        // Inicialización de las estructuras de datos
+        dat = new Datos();
+        procesos = new ArrayList<>();
+        preparar();
+
+        // Configuración de la ventana principal
+        JFrame frame = new JFrame("Puntos 2D - Distancias");
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        frame.add(panelPrincipal);
+        panelPrincipal = new PanelPrincipal(this);
+        frame.setContentPane(panelPrincipal);
         frame.pack();
         frame.setLocationRelativeTo(null); // Centra la ventana en la pantalla
-        frame.setResizable(false);
         frame.setVisible(true);
     }
 
-    public void dibujar() {
-        contadorTrominos = 1;
-        llenarTrominos(0, 0, datos.getTamano(), datos.getLibreX(), datos.getLibreY());
-        //System.out.println("Trominos llenados, contador: " + contadorTrominos);
-        datos.imprimirTablero();
-        panelPrincipal.setDatos(datos); // Actualizamos los datos en la vista
-        panelPrincipal.notificar("Tablero Actualizado");
+    /**
+     * Prepara los datos iniciales para los cálculos Genera una secuencia
+     * exponencial de tamaños de matrices
+     */
+    private void preparar() {
+        procesos.clear();;
+        dat.clear();
+        // Generamos tamaños de matrices en progresión lineal: 500, 1000, 1500 y 2000
+        for (int i = 500; i <= 2000; i += 500) {
+            dat.addTamañoN(i);
+        }
     }
 
-    public void actualizarDatos(int tamano,int libreFila, int libreColumna){
-        datos.reiniciarDatos(tamano,libreFila,libreColumna);
-    }
-    
-    // Método recursivo para llenar un tablero de tamaño tam x tam con trominos usando backtracking.
-    private void llenarTrominos(int x, int y, int tam, int libreX, int libreY) {
-        // Caso base: si el tamaño del subtablero es 2x2, llenamos las celdas vacías con un tromino.
-        if (tam == 2) {
-            // Iteramos sobre las 4 celdas del subtablero 2x2.
-            for (int i = 0; i < 2; i++) {
-                for (int j = 0; j < 2; j++) {
-                    // Si la celda está vacía (valor 0), le asignamos el número del tromino actual.
-                    // El bloque libre ya tiene el valor -1 y no se modifica.
-                    if (datos.getTablero()[x + i][y + j] == 0) {
-                        datos.getTablero()[x + i][y + j] = contadorTrominos;
+    /**
+     * Implementación del método notificar de la interfaz Notificar Gestiona las
+     * diferentes acciones del programa de forma sincronizada
+     *
+     * @param s String que indica la acción a realizar ("arrancar", "detener",
+     * "pintar")
+     */
+    @Override
+    public synchronized void notificar(String s) {
+        switch (s) {
+            case "CercanosON2" -> {
+                //Booleano para determinar si se ha encontrado un Proceso Producto en algún momento (ya sea vivo o muerto)
+                boolean encontrado = false;
+                //Si existen procesos en la lista, los recorremos
+                if (!procesos.isEmpty()) {
+                    // Recorremos cada proceso que exista
+                    for (int idx = 0; idx < procesos.size(); idx++) {
+                        //Si está vivo...
+                        if (((Thread) procesos.get(idx)).isAlive()) {
+                            // ... y es un proceso producto, no se puede ejecutar otro
+                            if (procesos.get(idx) instanceof ProcesoCercanosON2) {  //Si el nombre de la clase del proceso que miramos es "ProcesoCercanoON2"
+                                System.err.println("Ya hay un proceso O(n^2) en ejecución");
+                                encontrado = true;
+                                break; //Salimos del bucle porque solo hay 1 proceso de cada tipo
+                            }
+                        // Si este hilo muerto es el Proceso Producto -> lo arrancamos
+                        } else if (procesos.get(idx) instanceof ProcesoCercanosON2) { 
+                                //Reiniciamos el array de tiempos del producto
+                                dat.clearTiemposCercanosON2();
+                                // Lo creamos y arrancamos                                
+                                procesos.set(idx, new ProcesoCercanosON2(this));
+                                ((Thread) procesos.get(idx)).start();
+                                encontrado = true;
+                                break; //Ya hemos arrancado el proceso -> podemos salir ya del bucle
+                            }
+                        }
+                    }
+                //Si no hay ningún proceso creado aún o no se ha encontrado ningún proceso suma...
+                if (procesos.isEmpty() || !encontrado) {
+                    //... entonces simplemente creamos un proceso suma por primera vez
+                    procesos.add(new ProcesoCercanosON2(this));
+                    ((Thread) procesos.get(procesos.size() - 1)).start();  //procesos.size()-1 porque lo acabamos de meter al final
+                }
+            }
+            case "CercanosONLogN" -> {
+                //Booleano para determinar si se ha encontrado un Proceso Producto en algún momento (ya sea vivo o muerto)
+                boolean encontrado = false;
+                //Si existen procesos en la lista, los recorremos
+                if (!procesos.isEmpty()) {
+                    // Recorremos cada proceso que exista
+                    for (int idx = 0; idx < procesos.size(); idx++) {
+                        //Si está vivo...
+                        if (((Thread) procesos.get(idx)).isAlive()) {
+                            // ... y es un proceso producto, no se puede ejecutar otro
+                            if (procesos.get(idx) instanceof ProcesoCercanosONLogN) {  //Si el nombre de la clase del proceso que miramos es "ProcesoCercanoON2"
+                                System.err.println("Ya hay un proceso O(n·log n) en ejecución");
+                                encontrado = true;
+                                break; //Salimos del bucle porque solo hay 1 proceso de cada tipo
+                            }
+                        // Si este hilo muerto es el Proceso Producto -> lo arrancamos
+                        } else if (procesos.get(idx) instanceof ProcesoCercanosONLogN) { 
+                                //Reiniciamos el array de tiempos del producto
+                                dat.clearTiemposCercanosONLogN();
+                                // Lo creamos y arrancamos                                
+                                procesos.set(idx, new ProcesoCercanosONLogN(this));
+                                ((Thread) procesos.get(idx)).start();
+                                encontrado = true;
+                                break; //Ya hemos arrancado el proceso -> podemos salir ya del bucle
+                            }
+                        }
+                    }
+                //Si no hay ningún proceso creado aún o no se ha encontrado ningún proceso suma...
+                if (procesos.isEmpty() || !encontrado) {
+                    //... entonces simplemente creamos un proceso suma por primera vez
+                    procesos.add(new ProcesoCercanosONLogN(this));
+                    ((Thread) procesos.get(procesos.size() - 1)).start();  //procesos.size()-1 porque lo acabamos de meter al final
+                }
+            }
+            case "Lejanos" -> {
+                boolean encontrado = false;
+                if (!procesos.isEmpty()) {
+                    for (int i = 0; i < procesos.size(); i++) {
+                        if (((Thread) procesos.get(i)).isAlive()) {
+                            if (procesos.get(i) instanceof ProcesoLejanos) {
+                                System.err.println("Ya hay un proceso de lejanos en ejecución");
+                                encontrado = true;
+                                break;
+                            }
+                        } else if (procesos.get(i) instanceof ProcesoLejanos) {
+                            dat.clearTiemposLejanos();
+                            procesos.set(i, new ProcesoLejanos(this));
+                            ((Thread) procesos.get(i)).start();
+                            encontrado = true;
+                            break;
+                        }
+                    }
+                }
+                if (procesos.isEmpty() || !encontrado) {
+                    procesos.add(new ProcesoLejanos(this));
+                    ((Thread) procesos.get(procesos.size() - 1)).start();
+                }
+            }
+            case "Detener" -> {
+                // Detiene todos los procesos en ejecución
+                for (int i = 0; i < procesos.size(); i++) {
+                    if (((Thread) procesos.get(i)).isAlive()) {
+                        procesos.get(i).notificar("Detener");
                     }
                 }
             }
-            contadorTrominos++;
-            return;
-        }
-
-        // Caso recursivo: dividimos el tablero en 4 cuadrantes.
-        // Calculamos el tamaño de cada cuadrante y las coordenadas del centro.
-        int mitad = tam / 2;
-        int centroX = x + mitad; // Coordenada X del centro del subtablero.
-        int centroY = y + mitad; // Coordenada Y del centro del subtablero.
-
-        // Determinamos en qué cuadrante se encuentra el bloque libre y colocamos un tromino central
-        // en las posiciones correspondientes para cubrir los otros cuadrantes.
-
-        // Caso 1: El bloque libre está en el cuadrante superior izquierdo.
-        if (libreX < centroX && libreY < centroY) {
-            // Colocamos un tromino central que cubre las esquinas de los otros 3 cuadrantes.
-            colocarTrominoCentro(centroX, centroY, centroX, centroY - 1, centroX - 1, centroY);
-            // - Superior izquierdo: Contiene el bloque libre original.
-            llenarTrominos(x, y, mitad, libreX, libreY);
-            // - Superior derecho: Usa la celda (centroX, centroY-1) como "bloque libre".
-            llenarTrominos(centroX, y, mitad, centroX, centroY - 1);
-            // - Inferior izquierdo: Usa la celda (centroX-1, centroY) como "bloque libre".
-            llenarTrominos(x, centroY, mitad, centroX - 1, centroY);
-            // - Inferior derecho: Usa la celda (centroX, centroY) como "bloque libre".
-            llenarTrominos(centroX, centroY, mitad, centroX, centroY);
-
-        // Caso 2: El bloque libre está en el cuadrante inferior izquierdo.
-        } else if (libreX < centroX && libreY >= centroY) {
-            // Colocamos un tromino central que cubre las esquinas de los otros 3 cuadrantes.
-            colocarTrominoCentro(centroX - 1, centroY - 1, centroX, centroY - 1, centroX, centroY);
-            // - Superior izquierdo: Usa la celda (centroX-1, centroY-1) como "bloque libre".
-            llenarTrominos(x, y, mitad, centroX - 1, centroY - 1);
-            // - Superior derecho: Usa la celda (centroX, centroY-1) como "bloque libre".
-            llenarTrominos(centroX, y, mitad, centroX, centroY - 1);
-            // - Inferior izquierdo: Contiene el bloque libre original.
-            llenarTrominos(x, centroY, mitad, libreX, libreY);
-            // - Inferior derecho: Usa la celda (centroX, centroY) como "bloque libre".
-            llenarTrominos(centroX, centroY, mitad, centroX, centroY);
-
-        // Caso 3: El bloque libre está en el cuadrante superior derecho.
-        } else if (libreX >= centroX && libreY < centroY) {
-            // Colocamos un tromino central que cubre las esquinas de los otros 3 cuadrantes.
-            colocarTrominoCentro(centroX - 1, centroY - 1, centroX - 1, centroY, centroX, centroY);
-            // - Superior izquierdo: Usa la celda (centroX-1, centroY-1) como "bloque libre".
-            llenarTrominos(x, y, mitad, centroX - 1, centroY - 1);
-            // - Superior derecho: Contiene el bloque libre original.
-            llenarTrominos(centroX, y, mitad, libreX, libreY);
-            // - Inferior izquierdo: Usa la celda (centroX-1, centroY) como "bloque libre".
-            llenarTrominos(x, centroY, mitad, centroX - 1, centroY);
-            // - Inferior derecho: Usa la celda (centroX, centroY) como "bloque libre".
-            llenarTrominos(centroX, centroY, mitad, centroX, centroY);
-
-        // Caso 4: El bloque libre está en el cuadrante inferior derecho.
-        } else {
-            // Colocamos un tromino central que cubre las esquinas de los otros 3 cuadrantes.
-            colocarTrominoCentro(centroX - 1, centroY - 1, centroX - 1, centroY, centroX, centroY - 1);
-            // - Superior izquierdo: Usa la celda (centroX-1, centroY-1) como "bloque libre".
-            llenarTrominos(x, y, mitad, centroX - 1, centroY - 1);
-            // - Superior derecho: Usa la celda (centroX, centroY-1) como "bloque libre".
-            llenarTrominos(centroX, y, mitad, centroX, centroY - 1);
-            // - Inferior izquierdo: Usa la celda (centroX-1, centroY) como "bloque libre".
-            llenarTrominos(x, centroY, mitad, centroX - 1, centroY);
-            // - Inferior derecho: Contiene el bloque libre original.
-            llenarTrominos(centroX, centroY, mitad, libreX, libreY);
+            case "Pintar" -> {
+                // Solicita al panel principal que se actualice
+                panelPrincipal.notificar("Pintar");
+            }
+            default -> {
+                // No hace nada para otros casos
+            }
         }
     }
 
-    public void colocarTrominoCentro(int x1, int y1, int x2, int y2, int x3, int y3) {
-        datos.setBloque(x1,y1,contadorTrominos);
-        datos.setBloque(x2,y2,contadorTrominos);
-        datos.setBloque(x3,y3,contadorTrominos);
-        contadorTrominos++;
-    }
-
-    @Override
-    public void notificar(String s) {
-        if(s.startsWith("Dibujar")){
-            dibujar();   
-        }       
-    }
-    
-    public static void main(String[] args) {
-        SwingUtilities.invokeLater(Controlador::new);
+    /**
+     * Devuelve el objeto Datos que contiene la información de los cálculos
+     *
+     * @return Objeto Datos con la información de los cálculos
+     */
+    public Datos getDatos() {
+        return dat;
     }
 }

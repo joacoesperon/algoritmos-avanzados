@@ -1,128 +1,140 @@
 package vista;
 
+import control.Controlador;
+import java.awt.Color;
+import java.awt.Graphics;
+import java.util.ArrayList;
+
 import javax.swing.JPanel;
 import modelo.Datos;
-import java.awt.*;
 
+/**
+ * @author Joaquin Esperon Solari
+ * @author Marc Nadal Sastre Gondar
+*/
 public class Grafica extends JPanel {
-    
-    private Datos datos;
-    private String selectedColor; // Color seleccionado para los trominos
-    private static final int PANEL_SIZE = 400; // Tamaño fijo del panel en píxeles
 
-    public Grafica(){
-        this.datos = null;
-        this.selectedColor = null; // Valor por defecto
+    private Controlador controlador;
+
+    public Grafica(int w, int h, Controlador c) {
+        controlador = c;
+        this.setBounds(0, 0, w, h);
     }
-    
-    public void setDatos(Datos nuevosDatos, String color) {
-        this.datos = nuevosDatos;
-        this.selectedColor = color != null ? color : "Blanco"; // Blanco por defecto si no se selecciona
-        repaint(); // Solicitamos un repintado solo cuando se actualizan los datos
+
+    public void pintar() {
+        if (this.getGraphics() != null) {
+            paintComponent(this.getGraphics());
+        }
     }
-    
+
     @Override
-    protected void paintComponent(Graphics g) {
+    public void paintComponent(Graphics g) {
         super.paintComponent(g);
-        
-        if (datos == null || datos.getTamano() <= 0) {
-            return; // No pintamos si no hay datos válidos
-        }
-
-        // Calculamos el tamaño de cada celda para que el tablero quepa en el panel fijo
-        int tamanoTablero = datos.getTamano(); // 2 o 4
-        int tamanoCelda = PANEL_SIZE / tamanoTablero; // Tamaño dinámico de cada celda
-
-        // Rellenamos todo de blanco como fondo
+        Datos dat = controlador.getDatos();
+        int w = this.getWidth() - 1;
+        int h = this.getHeight() - 24;
         g.setColor(Color.WHITE);
-        g.fillRect(0, 0, PANEL_SIZE, PANEL_SIZE);
-   
-        // Dibujamos el bloque libre en negro
+        g.fillRect(0, 0, w, h);
         g.setColor(Color.BLACK);
-        g.fillRect(datos.getLibreY() * tamanoCelda, datos.getLibreX() * tamanoCelda, tamanoCelda, tamanoCelda);
+        g.drawLine(10, 10, 10, h - 10);
+        g.drawLine(10, h - 10, w - 10, h - 10);
 
-        // Dibujamos los trominos (celdas con el mismo número) sin bordes internos
-        for (int tromino = 1; tromino <= datos.obtenerMaxTromino(); tromino++) {
-            int[][] posiciones = datos.encontrarTromino(tromino);
-            if (posiciones.length >= 2) { // Al menos 2 celdas para un tromino
-                dibujarTrominoSinBordesInternos(g, posiciones, tamanoCelda);
+        if (dat != null && !dat.getPuntos().isEmpty()) {
+            int maxN = dat.getTamañoN(dat.getSizeTamañosN() - 1);
+            long maxTime = Math.max(Math.max(getMaxTime(dat.getTiemposCercanosON2()),
+                    getMaxTime(dat.getTiemposCercanosONLogN())), getMaxTime(dat.getTiemposLejanos()));
+
+            // Dibujar puntos y conexiones
+            for (int i = 0; i < dat.getSizeTamañosN(); i++) {
+                int n = dat.getTamañoN(i);
+                int px = 10 + (n * (w - 20) / maxN);
+                int pySuma = h - 20 - (int) (dat.getTiempoCercanosON2(i) * (h - 40) / maxTime);
+                int pyLogN = h - 20 - (int) (dat.getTiempoCercanosONLogN(i) * (h - 40) / maxTime);
+                int pyLejanos = h - 20 - (int) (dat.getTiempoLejanos(i) * (h - 40) / maxTime);
+
+                g.setColor(Color.GREEN);
+                g.fillOval(px - 3, pySuma - 3, 7, 7);
+                g.setColor(Color.BLACK);
+                g.drawOval(px - 3, pySuma - 3, 7, 7);
+
+                g.setColor(Color.BLUE);
+                g.fillOval(px - 3, pyLogN - 3, 7, 7);
+                g.setColor(Color.BLACK);
+                g.drawOval(px - 3, pyLogN - 3, 7, 7);
+
+                g.setColor(Color.RED);
+                g.fillOval(px - 3, pyLejanos - 3, 7, 7);
+                g.setColor(Color.BLACK);
+                g.drawOval(px - 3, pyLejanos - 3, 7, 7);
             }
-        }
-
-        // Dibujamos el borde externo del tablero en gris
-        g.setColor(Color.GRAY);
-        g.drawRect(0, 0, PANEL_SIZE, PANEL_SIZE);
-    } 
-
-    // Método para dibujar un tromino sin bordes internos
-    private void dibujarTrominoSinBordesInternos(Graphics g, int[][] posiciones, int tamanoCelda) {
-        // Ordenamos las posiciones por coordenadas para facilitar el dibujo
-        java.util.Arrays.sort(posiciones, (a, b) -> {
-            if (a[0] != b[0]) return a[0] - b[0]; // Ordenar por fila
-            return a[1] - b[1]; // Si las filas son iguales, ordenar por columna
-        });
-        
-        // Seleccionamos el color basado en el valor de selectedColor
-        Color trominoColor = Color.WHITE; // Blanco por defecto
-        switch (selectedColor) {
-            case "Azul":
-                trominoColor = Color.BLUE;
-                break;
-            case "Rojo":
-                trominoColor = Color.RED;
-                break;
-            case "Verde":
-                trominoColor = Color.GREEN;
-                break;
-            case "Blanco":
-            default:
-                trominoColor = Color.WHITE;
-                break;
-        }
-        
-        // Dibujamos solo los bordes externos de las celdas del tromino
-        for (int[] pos : posiciones) {
-            int x = pos[1] * tamanoCelda;
-            int y = pos[0] * tamanoCelda;
-
-            g.setColor(trominoColor); // Usamos el color seleccionado para el tromino
-            g.fillRect(x, y, tamanoCelda, tamanoCelda);
-
-            // Dibujamos los bordes externos, omitiendo los internos entre celdas del mismo tromino
-            boolean arriba = true, abajo = true, izquierda = true, derecha = true;
-
-            // Verificamos si hay celdas adyacentes del mismo tromino para omitir bordes internos
-            for (int[] otraPos : posiciones) {
-                if (pos == otraPos) continue;
-
-                // Si hay una celda arriba, omitimos el borde superior
-                if (otraPos[0] == pos[0] - 1 && otraPos[1] == pos[1]) {
-                    arriba = false;
-                }
-                // Si hay una celda abajo, omitimos el borde inferior
-                if (otraPos[0] == pos[0] + 1 && otraPos[1] == pos[1]) {
-                    abajo = false;
-                }
-                // Si hay una celda a la izquierda, omitimos el borde izquierdo
-                if (otraPos[0] == pos[0] && otraPos[1] == pos[1] - 1) {
-                    izquierda = false;
-                }
-                // Si hay una celda a la derecha, omitimos el borde derecho
-                if (otraPos[0] == pos[0] && otraPos[1] == pos[1] + 1) {
-                    derecha = false;
-                }
-            }
-
-            g.setColor(Color.GRAY);
-            if (arriba) g.drawLine(x, y, x + tamanoCelda, y); // Borde superior
-            if (abajo) g.drawLine(x, y + tamanoCelda, x + tamanoCelda, y + tamanoCelda); // Borde inferior
-            if (izquierda) g.drawLine(x, y, x, y + tamanoCelda); // Borde izquierdo
-            if (derecha) g.drawLine(x + tamanoCelda, y, x + tamanoCelda, y + tamanoCelda); // Borde derecho
         }
     }
 
+    private long getMaxTime(ArrayList<Long> times) {
+        return times.stream().mapToLong(Long::longValue).max().orElse(1L);
+    }
+
+    /*
     @Override
-    public Dimension getPreferredSize() {
-        return new Dimension(PANEL_SIZE, PANEL_SIZE); // Tamaño fijo del panel
+    public void paintComponent(Graphics g) {
+        super.paintComponent(g);
+        Datos dad = controlador.getDatos();
+        int w = this.getWidth() - 1;
+        int h = this.getHeight() - 24;
+        g.setColor(Color.white);
+        g.fillRect(0, 0, w, h);
+        g.setColor(Color.black);
+        g.drawLine(10, 10, 10, h - 10);
+        g.drawLine(10, h - 10, w - 10, h - 10);
+        if (dad != null) {
+            int maxelement = 0;
+            for (int i = 0; i < dad.getSizeElements(); i++) {
+                if (dad.getElement(i) > maxelement) {
+                    maxelement = dad.getElement(i);
+                }
+            }
+            long maxtemps;
+            int px, py, pax, pay;
+            maxtemps = 0;
+            for (int i = 0; i < dad.getSizeTiemposSuma(); i++) {
+                if (dad.getTiemposSuma(i) > maxtemps) {
+                    maxtemps = dad.getTiemposSuma(i);
+                }
+            }
+            for (int i = 0; i < dad.getSizeTiemposProducto(); i++) {
+                if (dad.getTiemposProducto(i) > maxtemps) {
+                    maxtemps = dad.getTiemposProducto(i);
+                }
+            }
+            // listaA
+            pax = 10;
+            pay = h - 10;
+            for (int i = 0; i < dad.getSizeTiemposSuma(); i++) {
+                g.setColor(Color.green);
+                px = dad.getElement(i) * (w - 20) / maxelement;
+                py = (h - 20) - ((int) (dad.getTiemposSuma(i) * (h - 40) / maxtemps));
+                g.fillOval(px - 3, py - 3, 7, 7);
+                g.drawLine(pax, pay, px, py);
+                g.setColor(Color.black);
+                g.drawOval(px - 3, py - 3, 7, 7);
+                pax = px;
+                pay = py;
+            }
+            // listaB
+            pax = 10;
+            pay = h - 10;
+            for (int i = 0; i < dad.getSizeTiemposProducto(); i++) {
+                g.setColor(Color.red);
+                px = dad.getElement(i) * (w - 20) / maxelement;
+                py = (h - 20) - ((int) (dad.getTiemposProducto(i) * (h - 40) / maxtemps));
+                g.fillOval(px - 3, py - 3, 7, 7);
+                g.drawLine(pax, pay, px, py);
+                g.setColor(Color.black);
+                g.drawOval(px - 3, py - 3, 7, 7);
+                pax = px;
+                pay = py;
+            }
+        }
     }
+    */
 }
