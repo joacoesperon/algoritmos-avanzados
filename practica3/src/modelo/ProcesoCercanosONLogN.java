@@ -14,7 +14,6 @@ import java.util.Random;
  * @author Marc Nadal Sastre Gondar
  */
 public class ProcesoCercanosONLogN extends Thread implements Notificar {
-
     private volatile boolean cancel;
     private Controlador contr;
 
@@ -24,25 +23,31 @@ public class ProcesoCercanosONLogN extends Thread implements Notificar {
     }
 
     @Override
-    public void run() {        
+    public void run() {
+        //System.out.println("Iniciando proceso Cercanos O(n·log n)...");
         contr.getDatos().clearTiemposCercanosONLogN();
         Datos dat = contr.getDatos();
-        Random rand = new Random();
-
-        for (int n : dat.getTamañosN()) {
-            if (cancel) break;
-            dat.generarPuntosAleatorios(n, 1000);
+        for (int idx = 0; idx < dat.getSizeTamañosN(); idx++) {
+            if (cancel) {
+                System.out.println("Proceso Cercanos O(n·log n) cancelado.");
+                break;
+            }
+            int n = dat.getTamañoN(idx);
+            ArrayList<Point2D> puntos = dat.getPuntosParaN(idx);
+            //System.out.println("Procesando " + n + " puntos: " + puntos);
             long start = System.nanoTime();
-            Point2D[] puntos = dat.getPuntos().toArray(new Point2D[0]);
-            Arrays.sort(puntos, (a, b) -> Double.compare(a.getX(), b.getX())); // Ordenar por x
-            double minDistance = closestPair(puntos, 0, n - 1);
+            Point2D[] puntosArray = puntos.toArray(new Point2D[0]);
+            Arrays.sort(puntosArray, (a, b) -> Double.compare(a.getX(), b.getX()));
+            double minDistance = closestPair(puntosArray, 0, n - 1);
+
             long time = System.nanoTime() - start;
             if (!cancel) {
                 dat.addTiempoCercanosONLogN(time);
+                System.out.println("O(n·log n) n=" + n + ". Tiempo: " + time + " ns, Distancia: " + minDistance);
                 contr.notificar("Pintar");
-                System.out.println("Cercanos O(n·log n) para n=" + n + ": Tiempo(ns)=" + time + ", Distancia=" + minDistance);
             }
         }
+        //System.out.println("Proceso Cercanos O(n·log n) terminado.");
     }
 
     private double closestPair(Point2D[] puntos, int left, int right) {
@@ -85,12 +90,13 @@ public class ProcesoCercanosONLogN extends Thread implements Notificar {
     }
 
     private void detener() {
-        cancel = true; 
+        cancel = true;
     }
 
     @Override
     public synchronized void notificar(String s) {
         if (s.contentEquals("Detener")) {
+            //System.out.println("Recibida orden de detener proceso O(n·log n).");
             detener();
         }
     }
