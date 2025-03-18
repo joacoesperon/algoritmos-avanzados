@@ -11,9 +11,8 @@ import modelo.Datos;
 /**
  * @author Joaquin Esperon Solari
  * @author Marc Nadal Sastre Gondar
-*/
+ */
 public class Grafica extends JPanel {
-
     private Controlador controlador;
 
     public Grafica(int w, int h, Controlador c) {
@@ -23,6 +22,7 @@ public class Grafica extends JPanel {
 
     public void pintar() {
         if (this.getGraphics() != null) {
+            //System.out.println("Repintando gráfica...");
             paintComponent(this.getGraphics());
         }
     }
@@ -36,105 +36,113 @@ public class Grafica extends JPanel {
         g.setColor(Color.WHITE);
         g.fillRect(0, 0, w, h);
         g.setColor(Color.BLACK);
-        g.drawLine(10, 10, 10, h - 10);
-        g.drawLine(10, h - 10, w - 10, h - 10);
+        g.drawLine(10, 10, 10, h - 10); // Eje Y
+        g.drawLine(10, h - 10, w - 10, h - 10); // Eje X
 
-        if (dat != null && !dat.getPuntos().isEmpty()) {
+        if (dat != null && !dat.getTamañosN().isEmpty()) {
             int maxN = dat.getTamañoN(dat.getSizeTamañosN() - 1);
-            long maxTime = Math.max(Math.max(getMaxTime(dat.getTiemposCercanosON2()),
-                    getMaxTime(dat.getTiemposCercanosONLogN())), getMaxTime(dat.getTiemposLejanos()));
+            long maxTime = 1L; // Valor por defecto para evitar división por cero
 
-            // Dibujar puntos y conexiones
+            // Calcular el tiempo máximo solo con los tiempos disponibles
+            if (!dat.getTiemposCercanosON2().isEmpty()) {
+                maxTime = Math.max(maxTime, getMaxTime(dat.getTiemposCercanosON2()));
+            }
+            if (!dat.getTiemposCercanosONLogN().isEmpty()) {
+                maxTime = Math.max(maxTime, getMaxTime(dat.getTiemposCercanosONLogN()));
+            }
+            if (!dat.getTiemposLejanos().isEmpty()) {
+                maxTime = Math.max(maxTime, getMaxTime(dat.getTiemposLejanos()));
+            }
+
+            // Arreglos para almacenar las coordenadas de los puntos
+            int[] xCoords = new int[dat.getSizeTamañosN()];
+            int[] yCoordsON2 = new int[dat.getSizeTamañosN()];
+            int[] yCoordsONLogN = new int[dat.getSizeTamañosN()];
+            int[] yCoordsLejanos = new int[dat.getSizeTamañosN()];
+            int countON2 = 0, countONLogN = 0, countLejanos = 0;
+
+            // Dibujar puntos y almacenar coordenadas
             for (int i = 0; i < dat.getSizeTamañosN(); i++) {
                 int n = dat.getTamañoN(i);
-                int px = 10 + (n * (w - 20) / maxN);
-                int pySuma = h - 20 - (int) (dat.getTiempoCercanosON2(i) * (h - 40) / maxTime);
-                int pyLogN = h - 20 - (int) (dat.getTiempoCercanosONLogN(i) * (h - 40) / maxTime);
-                int pyLejanos = h - 20 - (int) (dat.getTiempoLejanos(i) * (h - 40) / maxTime);
+                int px = 10 + (n * (w - 20) / maxN); // Posición X basada en el tamaño N
+                xCoords[i] = px;
 
-                g.setColor(Color.GREEN);
-                g.fillOval(px - 3, pySuma - 3, 7, 7);
-                g.setColor(Color.BLACK);
-                g.drawOval(px - 3, pySuma - 3, 7, 7);
+                // Dibujar tiempos de Cercanos O(n^2) si existen
+                if (i < dat.getSizeTiemposCercanosON2()) {
+                    int pySuma = h - 20 - (int) (dat.getTiempoCercanosON2(i) * (h - 40) / maxTime);
+                    g.setColor(Color.GREEN);
+                    g.fillOval(px - 3, pySuma - 3, 7, 7);
+                    g.setColor(Color.BLACK);
+                    g.drawOval(px - 3, pySuma - 3, 7, 7);
+                    yCoordsON2[countON2++] = pySuma;
+                }
 
-                g.setColor(Color.BLUE);
-                g.fillOval(px - 3, pyLogN - 3, 7, 7);
-                g.setColor(Color.BLACK);
-                g.drawOval(px - 3, pyLogN - 3, 7, 7);
+                // Dibujar tiempos de Cercanos O(n·log n) si existen
+                if (i < dat.getSizeTiemposCercanosONLogN()) {
+                    int pyLogN = h - 20 - (int) (dat.getTiempoCercanosONLogN(i) * (h - 40) / maxTime);
+                    g.setColor(Color.BLUE);
+                    g.fillOval(px - 3, pyLogN - 3, 7, 7);
+                    g.setColor(Color.BLACK);
+                    g.drawOval(px - 3, pyLogN - 3, 7, 7);
+                    yCoordsONLogN[countONLogN++] = pyLogN;
+                }
 
-                g.setColor(Color.RED);
-                g.fillOval(px - 3, pyLejanos - 3, 7, 7);
-                g.setColor(Color.BLACK);
-                g.drawOval(px - 3, pyLejanos - 3, 7, 7);
+                // Dibujar tiempos de Lejanos si existen
+                if (i < dat.getSizeTiemposLejanos()) {
+                    int pyLejanos = h - 20 - (int) (dat.getTiempoLejanos(i) * (h - 40) / maxTime);
+                    g.setColor(Color.RED);
+                    g.fillOval(px - 3, pyLejanos - 3, 7, 7);
+                    g.setColor(Color.BLACK);
+                    g.drawOval(px - 3, pyLejanos - 3, 7, 7);
+                    yCoordsLejanos[countLejanos++] = pyLejanos;
+                }
             }
+
+            // Dibujar líneas para Cercanos O(n^2)
+            if (countON2 > 1) {
+                //System.out.println("Dibujando líneas para O(n^2)...");
+                g.setColor(Color.GREEN);
+                for (int i = 0; i < countON2 - 1; i++) {
+                    g.drawLine(xCoords[i], yCoordsON2[i], xCoords[i + 1], yCoordsON2[i + 1]);
+                }
+            }
+
+            // Dibujar líneas para Cercanos O(n·log n)
+            if (countONLogN > 1) {
+                //System.out.println("Dibujando líneas para O(n·log n)...");
+                g.setColor(Color.BLUE);
+                for (int i = 0; i < countONLogN - 1; i++) {
+                    g.drawLine(xCoords[i], yCoordsONLogN[i], xCoords[i + 1], yCoordsONLogN[i + 1]);
+                }
+            }
+
+            // Dibujar líneas para Lejanos
+            if (countLejanos > 1) {
+                //System.out.println("Dibujando líneas para Lejanos...");
+                g.setColor(Color.RED);
+                for (int i = 0; i < countLejanos - 1; i++) {
+                    g.drawLine(xCoords[i], yCoordsLejanos[i], xCoords[i + 1], yCoordsLejanos[i + 1]);
+                }
+            }
+
+            // Añadir leyenda básica
+            g.setColor(Color.GREEN);
+            g.drawString("O(n^2)", w - 100, 20);
+            g.setColor(Color.BLUE);
+            g.drawString("O(n·log n)", w - 100, 40);
+            g.setColor(Color.RED);
+            g.drawString("Lejanos", w - 100, 60);
+
+            // Etiquetas de ejes
+            g.setColor(Color.BLACK);
+            g.drawString("Cantidad de puntos", w / 2, h - 10);
+            g.drawString("Tiempo (ns)", 10, 20);
+        } else {
+            System.out.println("No hay datos para graficar.");
         }
     }
 
     private long getMaxTime(ArrayList<Long> times) {
         return times.stream().mapToLong(Long::longValue).max().orElse(1L);
     }
-
-    /*
-    @Override
-    public void paintComponent(Graphics g) {
-        super.paintComponent(g);
-        Datos dad = controlador.getDatos();
-        int w = this.getWidth() - 1;
-        int h = this.getHeight() - 24;
-        g.setColor(Color.white);
-        g.fillRect(0, 0, w, h);
-        g.setColor(Color.black);
-        g.drawLine(10, 10, 10, h - 10);
-        g.drawLine(10, h - 10, w - 10, h - 10);
-        if (dad != null) {
-            int maxelement = 0;
-            for (int i = 0; i < dad.getSizeElements(); i++) {
-                if (dad.getElement(i) > maxelement) {
-                    maxelement = dad.getElement(i);
-                }
-            }
-            long maxtemps;
-            int px, py, pax, pay;
-            maxtemps = 0;
-            for (int i = 0; i < dad.getSizeTiemposSuma(); i++) {
-                if (dad.getTiemposSuma(i) > maxtemps) {
-                    maxtemps = dad.getTiemposSuma(i);
-                }
-            }
-            for (int i = 0; i < dad.getSizeTiemposProducto(); i++) {
-                if (dad.getTiemposProducto(i) > maxtemps) {
-                    maxtemps = dad.getTiemposProducto(i);
-                }
-            }
-            // listaA
-            pax = 10;
-            pay = h - 10;
-            for (int i = 0; i < dad.getSizeTiemposSuma(); i++) {
-                g.setColor(Color.green);
-                px = dad.getElement(i) * (w - 20) / maxelement;
-                py = (h - 20) - ((int) (dad.getTiemposSuma(i) * (h - 40) / maxtemps));
-                g.fillOval(px - 3, py - 3, 7, 7);
-                g.drawLine(pax, pay, px, py);
-                g.setColor(Color.black);
-                g.drawOval(px - 3, py - 3, 7, 7);
-                pax = px;
-                pay = py;
-            }
-            // listaB
-            pax = 10;
-            pay = h - 10;
-            for (int i = 0; i < dad.getSizeTiemposProducto(); i++) {
-                g.setColor(Color.red);
-                px = dad.getElement(i) * (w - 20) / maxelement;
-                py = (h - 20) - ((int) (dad.getTiemposProducto(i) * (h - 40) / maxtemps));
-                g.fillOval(px - 3, py - 3, 7, 7);
-                g.drawLine(pax, pay, px, py);
-                g.setColor(Color.black);
-                g.drawOval(px - 3, py - 3, 7, 7);
-                pax = px;
-                pay = py;
-            }
-        }
-    }
-    */
 }

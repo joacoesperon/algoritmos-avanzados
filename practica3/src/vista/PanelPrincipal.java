@@ -12,7 +12,6 @@ import java.awt.event.ActionListener;
  * @author Marc Nadal Sastre Gondar
 */
 public class PanelPrincipal extends JPanel implements Notificar {
-    
     private Controlador contr;
     private Grafica grafica;
 
@@ -24,12 +23,12 @@ public class PanelPrincipal extends JPanel implements Notificar {
         // Crear la barra de menú
         JMenuBar menuBar = new JMenuBar();
         JMenu procMenu = new JMenu("Procesos");
-        
-        JMenuItem cercanosON2 = new JMenuItem("Cercanos  O(n^2)");
-        JMenuItem cercanosONLogN = new JMenuItem("Cercanos  O(n*logn)");
+
+        JMenuItem cercanosON2 = new JMenuItem("Cercanos O(n^2)");
+        JMenuItem cercanosONLogN = new JMenuItem("Cercanos O(n·log n)");
         JMenuItem lejanos = new JMenuItem("Lejanos");
         JMenuItem detener = new JMenuItem("Detener");
-        
+
         procMenu.add(cercanosON2);
         procMenu.addSeparator();
         procMenu.add(cercanosONLogN);
@@ -38,48 +37,23 @@ public class PanelPrincipal extends JPanel implements Notificar {
         procMenu.addSeparator();
         procMenu.add(detener);
         menuBar.add(procMenu);
-        
+
         // Crear el panel principal con coordenadas absolutas
         JPanel mainPanel = new JPanel();
-        mainPanel.setLayout(null); // Permite la colocación de elementos en posiciones absolutas
+        mainPanel.setLayout(null);
         mainPanel.setBounds(0, 0, 800, 600);
         grafica = new Grafica(800, 600, contr);
         mainPanel.add(grafica);
-        
-        // Agregar el menú en la parte superior
+
         add(menuBar, BorderLayout.NORTH);
         add(mainPanel, BorderLayout.CENTER);
-        
-        // Agregar listeners a los elementos del menú
-        cercanosON2.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                contr.notificar("CercanosON2");
-            }
-        });
 
-        cercanosONLogN.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                contr.notificar("CercanosONLogN");
-            }
-        });
-
-        lejanos.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                contr.notificar("Lejanos");
-            }
-        });
-        
-        detener.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                contr.notificar("Detener");
-            }
-        });
+        cercanosON2.addActionListener(e -> contr.notificar("CercanosON2"));
+        cercanosONLogN.addActionListener(e -> contr.notificar("CercanosONLogN"));
+        lejanos.addActionListener(e -> contr.notificar("Lejanos"));
+        detener.addActionListener(e -> contr.notificar("Detener"));
     }
-    
+
     @Override
     public void notificar(String s) {
         if (s.startsWith("Pintar")) {
