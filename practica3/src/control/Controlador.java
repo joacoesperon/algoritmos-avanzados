@@ -53,12 +53,9 @@ public class Controlador implements Notificar {
      * exponencial de tamaños de matrices
      */
     private void preparar() {
-        procesos.clear();;
+        procesos.clear();
         dat.clear();
-        // Generamos tamaños de matrices en progresión lineal: 500, 1000, 1500 y 2000
-        for (int i = 500; i <= 2000; i += 500) {
-            dat.addTamañoN(i);
-        }
+        dat.preparar();
     }
 
     /**
@@ -71,76 +68,60 @@ public class Controlador implements Notificar {
     @Override
     public synchronized void notificar(String s) {
         switch (s) {
-            case "CercanosON2" -> {
-                //Booleano para determinar si se ha encontrado un Proceso Producto en algún momento (ya sea vivo o muerto)
+            case "CercanosON2":
                 boolean encontrado = false;
-                //Si existen procesos en la lista, los recorremos
                 if (!procesos.isEmpty()) {
-                    // Recorremos cada proceso que exista
                     for (int idx = 0; idx < procesos.size(); idx++) {
-                        //Si está vivo...
                         if (((Thread) procesos.get(idx)).isAlive()) {
-                            // ... y es un proceso producto, no se puede ejecutar otro
-                            if (procesos.get(idx) instanceof ProcesoCercanosON2) {  //Si el nombre de la clase del proceso que miramos es "ProcesoCercanoON2"
+                            if (procesos.get(idx) instanceof ProcesoCercanosON2) {
                                 System.err.println("Ya hay un proceso O(n^2) en ejecución");
                                 encontrado = true;
-                                break; //Salimos del bucle porque solo hay 1 proceso de cada tipo
+                                break;
                             }
-                        // Si este hilo muerto es el Proceso Producto -> lo arrancamos
-                        } else if (procesos.get(idx) instanceof ProcesoCercanosON2) { 
-                                //Reiniciamos el array de tiempos del producto
-                                dat.clearTiemposCercanosON2();
-                                // Lo creamos y arrancamos                                
-                                procesos.set(idx, new ProcesoCercanosON2(this));
-                                ((Thread) procesos.get(idx)).start();
-                                encontrado = true;
-                                break; //Ya hemos arrancado el proceso -> podemos salir ya del bucle
-                            }
+                        } else if (procesos.get(idx) instanceof ProcesoCercanosON2) {
+                            //System.out.println("Reiniciando proceso O(n^2) en índice " + idx);
+                            dat.clearTiemposCercanosON2();
+                            procesos.set(idx, new ProcesoCercanosON2(this));
+                            ((Thread) procesos.get(idx)).start();
+                            encontrado = true;
+                            break;
                         }
                     }
-                //Si no hay ningún proceso creado aún o no se ha encontrado ningún proceso suma...
-                if (procesos.isEmpty() || !encontrado) {
-                    //... entonces simplemente creamos un proceso suma por primera vez
-                    procesos.add(new ProcesoCercanosON2(this));
-                    ((Thread) procesos.get(procesos.size() - 1)).start();  //procesos.size()-1 porque lo acabamos de meter al final
                 }
-            }
-            case "CercanosONLogN" -> {
-                //Booleano para determinar si se ha encontrado un Proceso Producto en algún momento (ya sea vivo o muerto)
-                boolean encontrado = false;
-                //Si existen procesos en la lista, los recorremos
+                if (procesos.isEmpty() || !encontrado) {
+                    //System.out.println("Creando nuevo proceso O(n^2)");
+                    procesos.add(new ProcesoCercanosON2(this));
+                    ((Thread) procesos.get(procesos.size() - 1)).start();
+                }
+                break;
+            case "CercanosONLogN":
+                encontrado = false;
                 if (!procesos.isEmpty()) {
-                    // Recorremos cada proceso que exista
                     for (int idx = 0; idx < procesos.size(); idx++) {
-                        //Si está vivo...
                         if (((Thread) procesos.get(idx)).isAlive()) {
-                            // ... y es un proceso producto, no se puede ejecutar otro
-                            if (procesos.get(idx) instanceof ProcesoCercanosONLogN) {  //Si el nombre de la clase del proceso que miramos es "ProcesoCercanoON2"
+                            if (procesos.get(idx) instanceof ProcesoCercanosONLogN) {
                                 System.err.println("Ya hay un proceso O(n·log n) en ejecución");
                                 encontrado = true;
-                                break; //Salimos del bucle porque solo hay 1 proceso de cada tipo
+                                break;
                             }
-                        // Si este hilo muerto es el Proceso Producto -> lo arrancamos
-                        } else if (procesos.get(idx) instanceof ProcesoCercanosONLogN) { 
-                                //Reiniciamos el array de tiempos del producto
-                                dat.clearTiemposCercanosONLogN();
-                                // Lo creamos y arrancamos                                
-                                procesos.set(idx, new ProcesoCercanosONLogN(this));
-                                ((Thread) procesos.get(idx)).start();
-                                encontrado = true;
-                                break; //Ya hemos arrancado el proceso -> podemos salir ya del bucle
-                            }
+                        } else if (procesos.get(idx) instanceof ProcesoCercanosONLogN) {
+                            //System.out.println("Reiniciando proceso O(n·log n) en índice " + idx);
+                            dat.clearTiemposCercanosONLogN();
+                            procesos.set(idx, new ProcesoCercanosONLogN(this));
+                            ((Thread) procesos.get(idx)).start();
+                            encontrado = true;
+                            break;
                         }
                     }
-                //Si no hay ningún proceso creado aún o no se ha encontrado ningún proceso suma...
-                if (procesos.isEmpty() || !encontrado) {
-                    //... entonces simplemente creamos un proceso suma por primera vez
-                    procesos.add(new ProcesoCercanosONLogN(this));
-                    ((Thread) procesos.get(procesos.size() - 1)).start();  //procesos.size()-1 porque lo acabamos de meter al final
                 }
-            }
-            case "Lejanos" -> {
-                boolean encontrado = false;
+                if (procesos.isEmpty() || !encontrado) {
+                    //System.out.println("Creando nuevo proceso O(n·log n)");
+                    procesos.add(new ProcesoCercanosONLogN(this));
+                    ((Thread) procesos.get(procesos.size() - 1)).start();
+                }
+                break;
+            case "Lejanos":
+                encontrado = false;
                 if (!procesos.isEmpty()) {
                     for (int i = 0; i < procesos.size(); i++) {
                         if (((Thread) procesos.get(i)).isAlive()) {
@@ -150,6 +131,7 @@ public class Controlador implements Notificar {
                                 break;
                             }
                         } else if (procesos.get(i) instanceof ProcesoLejanos) {
+                            //System.out.println("Reiniciando proceso de lejanos en índice " + i);
                             dat.clearTiemposLejanos();
                             procesos.set(i, new ProcesoLejanos(this));
                             ((Thread) procesos.get(i)).start();
@@ -159,25 +141,24 @@ public class Controlador implements Notificar {
                     }
                 }
                 if (procesos.isEmpty() || !encontrado) {
+                    //System.out.println("Creando nuevo proceso de lejanos");
                     procesos.add(new ProcesoLejanos(this));
                     ((Thread) procesos.get(procesos.size() - 1)).start();
                 }
-            }
-            case "Detener" -> {
-                // Detiene todos los procesos en ejecución
+                break;
+            case "Detener":
+                System.out.println("Deteniendo todos los procesos...");
                 for (int i = 0; i < procesos.size(); i++) {
                     if (((Thread) procesos.get(i)).isAlive()) {
                         procesos.get(i).notificar("Detener");
                     }
                 }
-            }
-            case "Pintar" -> {
-                // Solicita al panel principal que se actualice
+                break;
+            case "Pintar":
                 panelPrincipal.notificar("Pintar");
-            }
-            default -> {
-                // No hace nada para otros casos
-            }
+                break;
+            default:
+                System.out.println("Notificación no reconocida: " + s);
         }
     }
 
