@@ -53,7 +53,7 @@ public class ProcesoCercanosON2 extends Thread implements Notificar {
             long time = System.nanoTime() - start;
             if (!cancel) {
                 dat.addTiempoCercanosON2(time);
-                System.out.println("O(n^2) n=" + n + ". Tiempo: " + time + " ns, Distancia: " + minDistance);
+                System.out.println("O(n^2) n=" + n + ": " + time + " ns, Distancia: " + minDistance);
                 contr.notificar("Pintar");
             }
         }

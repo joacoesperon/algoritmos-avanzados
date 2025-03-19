@@ -43,7 +43,7 @@ public class ProcesoCercanosONLogN extends Thread implements Notificar {
             long time = System.nanoTime() - start;
             if (!cancel) {
                 dat.addTiempoCercanosONLogN(time);
-                System.out.println("O(n·log n) n=" + n + ". Tiempo: " + time + " ns, Distancia: " + minDistance);
+                System.out.println("O(n·log n) n=" + n + ": " + time + " ns, Distancia: " + minDistance);
                 contr.notificar("Pintar");
             }
         }

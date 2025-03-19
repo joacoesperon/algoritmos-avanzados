@@ -8,7 +8,7 @@ import java.util.Random;
  * @author Marc Nadal Sastre Gondar
 */
 public class Datos {
-    public static final int LIMITE = 100; // Límite para x, y de los puntos
+    public static final int LIMITE = 10000; // Límite para x, y de los puntos
 
     private ArrayList<Integer> tamañosN;
     private ArrayList<Long> tiemposCercanosON2;
@@ -36,7 +36,7 @@ public class Datos {
     public void preparar() {
         //System.out.println("Generando puntos aleatorios para tamaños N...");
         Random rand = new Random();
-        for (int n = 500; n <= 2000; n += 500) {
+        for (int n = 1000; n <= 10000; n += 1000) {
             //System.out.println("Generando " + n + " puntos...");
             this.addTamañoN(n);
             ArrayList<Point2D> puntos = new ArrayList<>();
