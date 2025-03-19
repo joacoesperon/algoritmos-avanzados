@@ -54,6 +54,29 @@ public class Grafica extends JPanel {
                 maxTime = Math.max(maxTime, getMaxTime(dat.getTiemposLejanos()));
             }
 
+            // Definir valores de referencia para el eje Y (en nanosegundos)
+            long[] referenceTimes = {
+                10_000_000L, 50_000_000L, 100_000_000L, 150_000_000L,
+                200_000_000L, 250_000_000L, 300_000_000L, 350_000_000L
+            };
+            String[] referenceLabels = {
+                "10M ns", "50M ns", "100M ns", "150M ns",
+                "200M ns", "250M ns", "300M ns", "350M ns"
+            };
+
+            // Dibujar líneas de referencia y etiquetas en el eje Y
+            g.setColor(Color.LIGHT_GRAY);
+            for (int i = 0; i < referenceTimes.length; i++) {
+                long refTime = referenceTimes[i];
+                if (refTime <= maxTime) {
+                    int pyRef = h - 20 - (int) (refTime * (h - 40) / maxTime);
+                    g.drawLine(10, pyRef, w - 10, pyRef); // Línea horizontal
+                    g.setColor(Color.BLACK);
+                    g.drawString(referenceLabels[i], 10, pyRef - 5); // Etiqueta a la izquierda
+                    g.setColor(Color.LIGHT_GRAY);
+                }
+            }
+
             // Arreglos para almacenar las coordenadas de los puntos
             int[] xCoords = new int[dat.getSizeTamañosN()];
             int[] yCoordsON2 = new int[dat.getSizeTamañosN()];
